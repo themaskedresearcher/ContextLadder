@@ -1,0 +1,15 @@
+# ContextLadder replication package dependencies.
+# Pinned to the versions used to produce the study results.
+
+# --- Call-graph extraction (src/extract_call_graph) ---
+tree-sitter==0.25.2
+tree-sitter-c==0.24.2
+tree-sitter-cpp==0.23.4
+tqdm==4.67.3
+loguru==0.7.3
+toml==0.10.2
+
+# --- LLM ladder stage (src/ladder.py, scripts/run_contextladder.py) ---
+openai==2.37.0
+anthropic==0.109.2
+python-dotenv==1.2.2

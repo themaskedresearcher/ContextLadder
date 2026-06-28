@@ -1,0 +1,11 @@
+# Generated pipeline artifacts (clones, call graphs, context, runs, results, logs).
+# Override location with the CONTEXTLADDER_OUTPUT env var.
+output/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local environment / secrets
+.env
