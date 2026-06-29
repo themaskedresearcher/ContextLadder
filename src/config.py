@@ -113,11 +113,14 @@ def runs_logs_dir(model: str) -> Path:
 
 
 def warning_output_path(model: str, warning_id: str) -> Path:
-    """Per-warning JSON output path for the LLM ladder stage.
+    """Per-warning report path for the LLM ladder stage.
+
+    Each warning yields a single representative report (majority label + the
+    representative walk's levels), so the file is named ``report_*``.
 
     Warning ids may contain ``:`` (e.g. ``trueprint-5.4:0001``); ``:`` becomes
     ``__`` so the name is filesystem-safe on every OS.
     """
     safe_model = _SANITIZE_RE.sub("_", model)
     safe_id = warning_id.replace(":", "__")
-    return runs_dir_for_model(model) / f"votes_{safe_model}_{safe_id}.json"
+    return runs_dir_for_model(model) / f"report_{safe_model}_{safe_id}.json"

@@ -143,8 +143,8 @@ context deliberately omitted from the shipped thin dataset, writing
 
 ### 4. Run ContextLadder
 `python scripts/run_contextladder.py` runs the progressive-context LLM ladder
-(see below) over the extracted context and writes one verdict JSON per warning
-under `output/runs/<model>/`.
+(see below) over the extracted context and writes one representative-report JSON
+per warning under `output/runs/<model>/`.
 
 ---
 
@@ -173,10 +173,13 @@ rule** decides when to stop expanding context:
    is treated as stable anyway ("nothing more we can do"). If no decisive verdict
    was ever reached, the walk is unstable.
 
-Across the walks, the per-warning `label` is the majority of the walk labels;
-`is_stable` is true when a strict majority of walks are stable and agree with it.
-When `is_stable` is false, fall back to `majority_label` (the majority of
-decisive verdicts across every level of every walk).
+Across the walks, the per-warning **`final_label`** is the majority of the walk
+labels. The package then selects a single **representative walk** and emits only
+that walk's per-level responses as the report: among the walks whose label
+equals `final_label`, the representative is the one with the **highest
+`first_fp_level`** (the deepest level at which it first returned `FP`). Walks
+with no `FP` level rank lowest and ties keep the earliest walk, so a majority
+that never produced `FP` resolves to the first matching walk.
 
 A warning whose context extraction failed (no enclosing function resolved) is
 **not** triaged — it raises an error, is logged, and produces no verdict file
@@ -403,17 +406,20 @@ output/
 ├── context/                      # [3] per-warning extracted context (JSONL)
 │   ├── real_world_context.jsonl
 │   └── juliet_context.jsonl
-└── runs/<model>/                 # [4] one verdict JSON per warning
-    ├── votes_<model>_<warning_id>.json
+└── runs/<model>/                 # [4] one representative report per warning
+    ├── report_<model>_<warning_id>.json
     └── logs/
 ```
 
-Each `votes_<model>_<warning_id>.json` records:
+Each `report_<model>_<warning_id>.json` is the slim representative report:
 
-- `label` — the aggregated verdict (`TP` / `FP` / `UNKNOWN`),
-- `is_stable` — whether a stable majority was reached,
-- `majority_label` — fallback majority across all levels when `is_stable` is false,
-- `gold_label` — the dataset's ground-truth label (for evaluation),
-- `prompt_variant` (`adverse_path_roles` vs `adverse_path_roles_blind`) and `blind`,
-- `model`, `provider`, `num_votes`, `levels_plan`,
-- `walks` — the per-walk, per-level model responses, verdicts, and stop reasons.
+- `warning_id`, `project`, `model`,
+- `final_label` — the aggregated majority verdict (`TP` / `FP` / `UNKNOWN`),
+- `ground_truth_label` — the dataset's ground-truth label (for evaluation),
+- `levels` — the representative walk's per-level records, each with `level`,
+  `label`, `response`, and `error`.
+
+The representative walk is the majority-label walk with the highest
+`first_fp_level` (see the stabilization rule above). The run log additionally
+reports `is_stable` / `majority_label` / stable-walk counts for each warning,
+but only the slim report is written to disk.

@@ -9,7 +9,7 @@ src/
 ├── config.py             # central paths / output layout for every stage
 ├── repo_clone.py         # clone + checkout project sources (safe-directory fix)
 ├── context_extraction.py # resolve warnings + extract leveled callers + bodies
-├── ladder.py             # stabilization state machine + N-vote walks + aggregation
+├── ladder.py             # stabilization state machine + N-vote walks + aggregation + representative report
 ├── llm_runner/           # minimal multi-provider LLM client
 │   └── runner.py         # setup_client / send_prompt (OpenAI + Anthropic)
 ├── prompts/              # prompt builders
@@ -105,6 +105,11 @@ The ContextLadder triage engine. Backs `scripts/run_contextladder.py`.
   usable enclosing-function context (failed context extraction) it raises
   `ContextExtractionError` — **no verdict is produced**, rather than defaulting
   to `UNKNOWN`.
+- **Representative report:** `select_representative(walks, final_label)` picks the
+  majority-label walk with the highest `first_fp_level` (no-FP walks rank lowest;
+  ties keep the earliest walk), and `build_report(record, aggregate_result, …)`
+  emits the slim per-warning report (`warning_id`, `project`, `model`,
+  `final_label`, `ground_truth_label`, and the representative walk's `levels`).
 - **Model glue:** `make_level_evaluator(record, client, model, blind=…)` builds
   the prompt for a level (blind mode strips comments + uses the bias-prevention
   prompt), queries the model, and returns the per-level record.

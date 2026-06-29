@@ -4,8 +4,10 @@
 For each warning this runs ``--num-votes`` independent stabilization walks (see
 ``src/ladder.py``). Each walk starts at level 1 (the enclosing function) and adds
 caller levels until a verdict stabilizes (three consecutive agreeing levels) or
-the levels run out. Per-warning results are written to
-``output/runs/<model>/votes_<model>_<warning_id>.json``.
+the levels run out. The walks are aggregated to a majority ``final_label`` and a
+single representative walk (highest ``first_fp_level`` among majority-label
+walks) is written as the per-warning report to
+``output/runs/<model>/report_<model>_<warning_id>.json``.
 
 Inputs (from ``extract_context.py``):
 * ``realworld`` -> ``output/context/real_world_context.jsonl``
@@ -121,9 +123,12 @@ def process_one(rec: Dict[str, Any], wid: str, *, client, args, blind: bool,
     result["model"] = args.model
     result["provider"] = args.provider
     result["blind"] = blind
+    # Persist a single slim report (majority label + representative walk's levels);
+    # the full aggregate is kept only in-memory for run-log summary stats.
+    report = ladder.build_report(rec, result, model=args.model, warning_id=wid)
     out_path = config.warning_output_path(args.model, wid)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return result
 
 

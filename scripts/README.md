@@ -38,7 +38,7 @@ Pipeline order and data flow:
                     ▼                                       ▼
 [4] run_contextladder.py                    [4] run_contextladder.py --dataset juliet
         ──► output/runs/<model>/                     ──► output/runs/<model>/
-            votes_<model>_<warning_id>.json              votes_<model>_<warning_id>.json
+            report_<model>_<warning_id>.json             report_<model>_<warning_id>.json
 ```
 
 ---
@@ -225,10 +225,11 @@ expanding:
    is treated as stable anyway ("nothing we can do"). If no decisive verdict was
    ever reached, the walk is unstable.
 
-Across the `--num-votes` walks, the per-warning `label` is the majority of the
-walk labels; `is_stable` is true when a strict majority of walks are stable and
-agree with it. When `is_stable` is false, fall back to `majority_label` (majority
-of decisive verdicts across every level of every walk).
+Across the `--num-votes` walks, the per-warning `final_label` is the majority of
+the walk labels. The package then picks one **representative walk** — among the
+walks whose label equals `final_label`, the one with the highest `first_fp_level`
+(walks with no `FP` rank lowest; ties keep the earliest walk) — and writes only
+that walk's per-level responses as the report.
 
 The prompt is the **adverse-path + evidence-roles** variant. The exact system
 prompt is also exported to
@@ -257,9 +258,11 @@ override either way with `--blind` / `--no-blind`. The output records the
 and an API key for the chosen provider (copy `.env.example` to `.env`).
 
 **Outputs.** One JSON file per warning under `output/runs/<model>/`:
-`votes_<model>_<warning_id>.json`, containing the aggregated `label`,
-`is_stable`, `majority_label`, the per-walk `walk_label` / `stop_reason`, and the
-full per-level model responses. Logs go to `output/runs/<model>/logs/`. Existing
+`report_<model>_<warning_id>.json`, the slim representative report with
+`warning_id`, `project`, `model`, `final_label`, `ground_truth_label`, and
+`levels` (the representative walk's per-level `level` / `label` / `response` /
+`error`). The run log additionally records `is_stable` / `majority_label` /
+stable-walk counts per warning. Logs go to `output/runs/<model>/logs/`. Existing
 output files are skipped on re-run unless `--force` is given.
 
 Warnings whose context extraction failed (no enclosing-function body) **cannot

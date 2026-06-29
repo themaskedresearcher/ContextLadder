@@ -225,10 +225,15 @@ def stabilized_walk(levels: list, evaluate: Callable[[int], dict]) -> dict:
     confirmed_at_level: Optional[int] = None
     stop_reason: Optional[str] = None
 
+    first_fp_level: Optional[int] = None
+
     for level in levels:
         rec = evaluate(level)
         label = rec.get("label")
         level_records.append(rec)
+
+        if label == "FP" and first_fp_level is None:
+            first_fp_level = level
 
         if label not in DECISIVE_LABELS:  # UNKNOWN, None, or failed level -> void window
             base_label, base_level, streak = None, None, 0
@@ -263,6 +268,7 @@ def stabilized_walk(levels: list, evaluate: Callable[[int], dict]) -> dict:
         "stable": stable,
         "stable_label": stable_label,
         "walk_label": walk_label,
+        "first_fp_level": first_fp_level,
         "stop_reason": stop_reason,
         "base_label_at_stop": base_label,
         "base_level": base_level,
@@ -311,6 +317,54 @@ def aggregate_walks(record: dict, walks: list, num_votes: int, levels: list,
         "walks": walks,
     })
     return out
+
+
+def select_representative(walks: list, final_label: str) -> dict:
+    """Pick the representative walk for the report.
+
+    Among the walks whose ``walk_label`` equals ``final_label`` (the majority
+    verdict), choose the one with the highest ``first_fp_level``. Walks without
+    any FP level (``first_fp_level is None``) rank lowest, and ties keep the
+    earliest walk, so a no-FP majority resolves to the first matching walk.
+    If no walk carries the majority label, fall back to all walks.
+    """
+    candidates = [w for w in walks if w.get("walk_label") == final_label] or list(walks)
+    best = None
+    best_key = None
+    for walk in candidates:
+        ffp = walk.get("first_fp_level")
+        key = ffp if ffp is not None else -1
+        if best is None or key > best_key:
+            best, best_key = walk, key
+    return best
+
+
+def build_report(record: dict, aggregate_result: dict, *, model: str,
+                 warning_id: str) -> dict:
+    """Build the single slim per-warning report.
+
+    Reuses the aggregate's majority ``label`` as ``final_label`` and emits only
+    the representative walk's levels (level/label/response/error), matching the
+    reference format in ``deepseek_adverse_final/atheme__0999.json``.
+    """
+    final_label = aggregate_result.get("label")
+    rep = select_representative(aggregate_result.get("walks") or [], final_label)
+    levels = []
+    for lvl in (rep.get("levels") if rep else []) or []:
+        levels.append({
+            "level": lvl.get("level"),
+            "label": lvl.get("label"),
+            "response": lvl.get("response"),
+            "error": lvl.get("error"),
+        })
+    return {
+        "warning_id": warning_id,
+        "project": record.get("project"),
+        "model": model,
+        "final_label": final_label,
+        "ground_truth_label": record.get("label"),
+        "levels": levels,
+    }
 
 
 def run_warning(record: dict, *, evaluate: Callable[[int], dict],
