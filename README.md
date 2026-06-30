@@ -1,7 +1,7 @@
 # ContextLadder
 
 This repository contains the datasets and replication package for the paper:
-***ContextLadder: Progressive-Context LLM Triage of Static-Analysis Warnings***.
+***ContextLadder: Expanding Caller Context for LLM-Based Warning Triage***.
 
 It ships **thin warning manifests** (warning location + cloning/source info, but
 no extracted callers or function bodies) plus the full pipeline code so you can
