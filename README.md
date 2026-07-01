@@ -1,7 +1,7 @@
 # ContextLadder
 
 This repository contains the datasets and replication package for the paper:
-***ContextLadder: Progressive-Context LLM Triage of Static-Analysis Warnings***.
+***ContextLadder: Expanding Caller Context for LLM-Based Warning Triage***.
 
 It ships **thin warning manifests** (warning location + cloning/source info, but
 no extracted callers or function bodies) plus the full pipeline code so you can
@@ -21,7 +21,6 @@ cloning needed).
 
 ## Table of contents
 
-- [Repository structure](#repository-structure)
 - [What the project does](#what-the-project-does)
   - [1. Clone projects](#1-clone-projects)
   - [2. Build call graphs](#2-build-call-graphs)
@@ -44,51 +43,6 @@ cloning needed).
   - [Quick smoke test](#quick-smoke-test)
 - [CLI reference](#cli-reference)
 - [Outputs](#outputs)
-
----
-
-## Repository structure
-
-```text
-replication_package/
-├── README.md                 # this file
-├── requirements.txt          # pinned dependencies
-├── .env.example              # provider API-key template
-├── .gitignore                # ignores output/, .env, __pycache__
-├── data/
-│   ├── README.md             # dataset schema and field reference
-│   ├── real_world_warnings.jsonl   # 174 real-world warnings (147 FP + 27 TP)
-│   ├── juliet_warnings.jsonl       # 918 Juliet synthetic warnings (all FP)
-│   └── juliet/
-│       └── testcases/        # vendored Juliet source for the 918 warnings
-├── prompt_templates/
-│   ├── adverse_path_roles_system_prompt.txt        # the system prompt (reference)
-│   └── adverse_path_roles_blind_system_prompt.txt  # the blind variant (reference)
-├── scripts/                  # command-line entry points (one per stage)
-│   ├── README.md             # detailed per-stage docs
-│   ├── clone_projects.py
-│   ├── build_call_graphs.py
-│   ├── extract_context.py
-│   └── run_contextladder.py
-└── src/                      # reusable library code
-    ├── README.md             # module reference
-    ├── config.py             # central paths / output layout
-    ├── repo_clone.py         # clone + checkout (safe-directory fix)
-    ├── context_extraction.py # resolve warnings + leveled callers + bodies
-    ├── ladder.py             # stabilization state machine + voting
-    ├── llm_runner/           # multi-provider LLM client
-    ├── prompts/              # adverse-path + evidence-roles prompt builder
-    └── extract_call_graph/   # tree-sitter C/C++ call-graph extractor
-```
-
-All generated artifacts are written under:
-
-```text
-output/
-```
-
-This folder is created automatically. To put it elsewhere (e.g. a larger drive),
-set the `CONTEXTLADDER_OUTPUT` environment variable to an absolute path.
 
 ---
 
