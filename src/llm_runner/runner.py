@@ -54,7 +54,7 @@ def send_prompt(client, context: str, user_input: str, model: str,
     if "claude" in model:
         with client.messages.stream(
             model=model,
-            temperature=0.0,
+            temperature=0.7,
             system=context,
             max_tokens=64_000,
             messages=[{"role": "user", "content": user_input}],
@@ -76,11 +76,11 @@ def send_prompt(client, context: str, user_input: str, model: str,
             model=model, messages=messages, stream=False, **extra)
     elif "llama" in model:
         response = client.chat.completions.create(
-            model=model, temperature=0.0,
+            model=model, temperature=0.7,
             response_format={"type": "json_object"}, messages=messages)
     else:
         response = client.chat.completions.create(
-            model=model, messages=messages, temperature=0.0, stream=False, **extra)
+            model=model, messages=messages, temperature=0.7, stream=False, **extra)
 
     answer_content = response.choices[0].message.content
     try:
